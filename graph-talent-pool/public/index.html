@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Talent Pool Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg-primary: #0f0f1a;
+      --bg-secondary: #1a1a2e;
+      --bg-card: #16213e;
+      --accent: #00d4ff;
+      --accent-secondary: #7b2cbf;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0b0;
+      --border: rgba(255,255,255,0.1);
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-primary); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+    .sidebar { width: 300px; background: var(--bg-secondary); padding: 1.5rem; border-right: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; gap: 1.5rem; }
+    .main { flex: 1; padding: 2rem; overflow-y: auto; }
+    
+    h1 { font-size: 1.5rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, #00d4ff, #7b2cbf); -webkit-background-clip: text; color: transparent; }
+    h2 { font-size: 1.2rem; margin-bottom: 1rem; }
+    
+    .filter-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    label { font-size: 0.9rem; color: var(--text-secondary); }
+    select, input { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary); padding: 0.5rem; border-radius: 6px; font-family: inherit; }
+    button { background: var(--accent); color: #000; border: none; padding: 0.75rem; border-radius: 6px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+    button:hover { opacity: 0.9; }
+
+    .role-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .role-btn { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer; }
+    .role-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+    .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; }
+    @media (max-width: 1000px) { .dashboard-grid { grid-template-columns: 1fr; } }
+    
+    .charts-column { display: flex; flex-direction: column; gap: 1.5rem; }
+    .chart-container { background: var(--bg-card); padding: 1rem; border-radius: 12px; border: 1px solid var(--border); min-width: 0; position: relative; }
+    .table-container { background: var(--bg-card); padding: 1rem; border-radius: 12px; border: 1px solid var(--border); overflow-x: auto; }
+    
+    .chart-wrapper { position: relative; height: 250px; width: 100%; }
+
+    table { width: 100%; border-collapse: collapse; min-width: 600px; }
+    th { text-align: left; padding: 1rem; color: var(--text-secondary); font-size: 0.85rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    td { padding: 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover { background: rgba(255,255,255,0.02); }
+    
+    .candidate-name { font-weight: 600; font-size: 0.95rem; color: var(--text-primary); }
+    .candidate-email { font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px; }
+    .fit-score { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+    
+    .skill-tag { background: rgba(0, 212, 255, 0.1); color: var(--accent); padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; display: inline-block; margin-bottom: 4px; border: 1px solid rgba(0,212,255,0.2); }
+    
+    .fab { position: fixed; bottom: 2rem; right: 2rem; background: var(--accent); color: #000; padding: 1rem 2rem; border-radius: 50px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,212,255,0.4); cursor: pointer; display: none; transition: transform 0.2s; z-index: 100; }
+    .fab:hover { transform: translateY(-2px); }
+    
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+    .modal.open { opacity: 1; pointer-events: auto; }
+    .modal-content { background: var(--bg-secondary); width: 90%; max-width: 800px; max-height: 90vh; border-radius: 16px; padding: 2rem; overflow-y: auto; border: 1px solid var(--border); position: relative; }
+    .close-btn { position: absolute; top: 1rem; right: 1rem; color: var(--text-secondary); cursor: pointer; font-size: 1.5rem; }
+    
+    .cb-select { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent); }
+    
+    .overlap-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .overlap-card { background: var(--bg-card); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); }
+    .overlap-title { color: var(--accent); font-size: 0.9rem; margin-bottom: 0.5rem; font-weight: bold; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--bg-card); padding: 1rem; border-radius: 12px; border: 1px solid var(--border); }
+    .stat-value { font-size: 2rem; font-weight: 700; color: var(--accent); }
+    .stat-label { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; }
+    
+    .clickable-name { color: var(--accent); cursor: pointer; transition: opacity 0.2s; }
+    .clickable-name:hover { text-decoration: underline; opacity: 0.8; }
+    
+    .profile-section { margin-bottom: 2rem; }
+    .profile-section h3 { border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 1rem; color: #fff; font-size: 1.1rem; }
+    .exp-item { margin-bottom: 1.5rem; padding-left: 1rem; border-left: 2px solid var(--accent); }
+    .exp-role { font-weight: 600; color: #fff; }
+    .exp-meta { font-size: 0.85rem; color: #888; margin: 4px 0; }
+    .exp-desc { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.4; }
+    
+    .connection-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+    .connection-card { background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; }
+    .connection-card:hover { background: rgba(0,212,255,0.1); border-color: var(--accent); transform: translateY(-2px); }
+    
+    .team-member { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(255,255,255,0.02); border-radius: 8px; margin-bottom: 0.75rem; border: 1px solid var(--border); }
+    .team-avatar { width: 50px; height: 50px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000; flex-shrink: 0; }
+    .team-info { flex: 1; }
+    .team-name { font-weight: 600; color: #fff; cursor: pointer; }
+    .team-name:hover { color: var(--accent); text-decoration: underline; }
+    .team-role { color: var(--accent); font-size: 0.9rem; margin-top: 2px; }
+    .team-meta { color: #888; font-size: 0.8rem; margin-top: 4px; }
+    .project-header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 2rem; border-radius: 12px; margin-bottom: 2rem; }
+    .project-type-badge { display: inline-block; padding: 4px 12px; background: var(--accent); color: #000; border-radius: 20px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div>
+      <h1>Talent Pool</h1>
+      <p style="color: var(--text-secondary); font-size: 0.9rem;">Advanced Candidate Search</p>
+    </div>
+
+    <div class="filter-group">
+      <label>Role Category</label>
+      <div class="role-buttons" id="category-btns">
+        <button class="role-btn active" onclick="setCategory('specialists', this)">Specialist</button>
+        <button class="role-btn" onclick="setCategory('structural', this)">Structural</button>
+        <button class="role-btn" onclick="setCategory('tech_field', this)">Tech Field</button>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <label>Select Role</label>
+      <select id="role-select" onchange="applyRolePreset()">
+        <!-- Filled by JS -->
+      </select>
+    </div>
+
+    <hr style="border-color: var(--border); width: 100%;">
+
+    <div class="filter-group">
+      <label>Min Years Experience</label>
+      <input type="number" id="min-years" value="0">
+    </div>
+
+    <div class="filter-group">
+      <label>Min Connections (Relations)</label>
+      <input type="number" id="min-connections" value="0">
+    </div>
+
+    <div class="filter-group">
+      <label>Required Skills (comma sep)</label>
+      <textarea id="req-skills" rows="4" style="resize: vertical;"></textarea>
+    </div>
+
+    <button onclick="fetchData()">Apply Filters</button>
+  </div>
+
+  <div class="main">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Candidates Found</div>
+        <div class="stat-value" id="stat-count">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Experience</div>
+        <div class="stat-value" id="stat-exp">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Connections</div>
+        <div class="stat-value" id="stat-conn">-</div>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <!-- Candidates Table Column -->
+      <div class="table-container">
+        <h2>🏆 Top Candidates</h2>
+        <table id="results-table">
+          <thead>
+            <tr>
+              <th style="width: 40px">
+                  <input type="checkbox" onchange="toggleAll(this)" class="cb-select"> 
+              </th>
+              <th>Rank</th>
+              <th>Name</th>
+              <th>Role Fit</th>
+              <th>Years</th>
+              <th>Conn.</th>
+              <th>Top Skills</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Charts Column -->
+      <div class="charts-column">
+        <div class="chart-container">
+          <div class="chart-wrapper">
+            <canvas id="skillsChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-container">
+          <div class="chart-wrapper">
+            <canvas id="yearsChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="fab" id="compare-fab" onclick="compareCandidates()">
+    Compare Selected (<span id="sel-count">0</span>)
+  </div>
+  
+  <div class="modal" id="compare-modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeModal()">&times;</span>
+      <h2 style="margin-top:0">Candidate Overlap Analysis</h2>
+      
+      <div id="modal-body">
+        <div style="text-align:center; padding: 2rem;">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="profile-modal">
+    <div class="modal-content" style="max-width: 900px;">
+      <span class="close-btn" onclick="closeProfileModal()">&times;</span>
+      <div id="profile-content">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="project-modal">
+    <div class="modal-content" style="max-width: 800px;">
+      <span class="close-btn" onclick="closeProjectModal()">&times;</span>
+      <div id="project-content">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let roleDefinitions = {};
+    let currentCategory = 'specialists';
+    let skillsChart = null;
+    let yearsChart = null;
+    let selectedCandidates = new Set();
+    let allCandidateIds = [];
+
+    async function init() {
+        // Fetch role definitions
+        try {
+            const response = await fetch('/api/roles');
+            roleDefinitions = await response.json();
+            setCategory('specialists');
+            fetchData();
+        } catch(e) { console.error(e); }
+    }
+
+    function setCategory(cat, btn) {
+        currentCategory = cat;
+        
+        // Update UI buttons
+        const btns = document.querySelectorAll('#category-btns .role-btn');
+        btns.forEach(b => b.classList.remove('active'));
+        
+        if (btn) {
+            btn.classList.add('active');
+        } else {
+            // If called programmatically (like during init), find the button by text or data
+            btns.forEach(b => {
+                if (b.textContent.toLowerCase().includes(cat.replace('_', ' ').toLowerCase())) {
+                    b.classList.add('active');
+                }
+            });
+        }
+        
+        const select = document.getElementById('role-select');
+        select.innerHTML = '<option value="">-- Custom --</option>';
+        
+        if (roleDefinitions[cat]) {
+            Object.keys(roleDefinitions[cat]).forEach(role => {
+                const opt = document.createElement('option');
+                opt.value = role;
+                opt.textContent = role;
+                select.appendChild(opt);
+            });
+        }
+    }
+
+    function applyRolePreset() {
+        const roleName = document.getElementById('role-select').value;
+        if (!roleName) return;
+
+        const role = roleDefinitions[currentCategory][roleName];
+        if (role) {
+            document.getElementById('min-years').value = role.minYears;
+            document.getElementById('req-skills').value = role.requiredSkills.join(', ');
+        }
+        fetchData();
+    }
+
+    async function fetchData() {
+        const minYears = document.getElementById('min-years').value;
+        const minConnections = document.getElementById('min-connections').value;
+        const requiredSkills = document.getElementById('req-skills').value;
+
+        const params = new URLSearchParams({
+            minYears,
+            minConnections,
+            requiredSkills
+        });
+
+        const res = await fetch(`/api/candidates?${params}`);
+        const data = await res.json();
+        
+        // Clear selections
+        selectedCandidates.clear();
+        updateFab();
+        
+        render(data);
+    }
+
+    function render(data) {
+        // Stats
+        document.getElementById('stat-count').textContent = data.candidates.length;
+        const avgExp = data.candidates.reduce((a,c) => a + c.workingYears, 0) / (data.candidates.length || 1);
+        document.getElementById('stat-exp').textContent = avgExp.toFixed(1) + ' yrs';
+        const avgConn = data.candidates.reduce((a,c) => a + c.connections, 0) / (data.candidates.length || 1);
+        document.getElementById('stat-conn').textContent = Math.round(avgConn);
+        
+        allCandidateIds = data.candidates.map(c => c.id);
+
+        // Table
+        const tbody = document.querySelector('#results-table tbody');
+        tbody.innerHTML = data.candidates.map((c, i) => `
+            <tr>
+                <td><input type="checkbox" class="cb-select" value="${c.id}" onchange="toggleCandidate('${c.id}')"></td>
+                <td>#${i+1}</td>
+                <td>
+                    <div class="clickable-name" style="font-weight:600" onclick="showProfile('${c.id}')">${c.name}</div>
+                    <div style="font-size:0.8rem; color:#888">${c.email}</div>
+                </td>
+                <td><span style="color:var(--accent); font-weight:bold">${c.fitScore}</span></td>
+                <td>${c.workingYears}</td>
+                <td>${c.connections}</td>
+                <td>${c.dataSkills.slice(0, 5).map(s => `<span class="skill-tag">${s}</span>`).join('')}</td>
+            </tr>
+        `).join('');
+
+        // Charts
+        updateCharts(data);
+    }
+    
+    function toggleCandidate(id) {
+        if (selectedCandidates.has(id)) selectedCandidates.delete(id);
+        else selectedCandidates.add(id);
+        updateFab();
+    }
+    
+    function toggleAll(cb) {
+        const checked = cb.checked;
+        const boxes = document.querySelectorAll('#results-table .cb-select');
+        boxes.forEach(b => {
+             // Only toggle rows, not header
+             if (b !== cb) {
+                 b.checked = checked;
+                 if (checked) selectedCandidates.add(b.value);
+                 else selectedCandidates.delete(b.value);
+             }
+        });
+        updateFab();
+    }
+    
+    function updateFab() {
+        const fab = document.getElementById('compare-fab');
+        document.getElementById('sel-count').textContent = selectedCandidates.size;
+        if (selectedCandidates.size >= 2) {
+            fab.style.display = 'block';
+        } else {
+            fab.style.display = 'none';
+        }
+    }
+    
+    async function compareCandidates() {
+        const modal = document.getElementById('compare-modal');
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('open'), 10);
+        
+        const ids = Array.from(selectedCandidates).join(',');
+        
+        try {
+            const res = await fetch(`/api/overlap?ids=${ids}`);
+            const data = await res.json();
+            renderOverlap(data);
+        } catch (e) {
+            document.getElementById('modal-body').innerHTML = '<p style="color:red">Error loading comparison</p>';
+        }
+    }
+    
+    function renderOverlap(data) {
+        if (data.error) {
+             document.getElementById('modal-body').textContent = data.error;
+             return;
+        }
+        
+        const html = `
+            <div style="margin-bottom: 2rem">
+                Comparing: ${data.candidates.map(c => `<strong>${c.name}</strong>`).join(' vs ')}
+            </div>
+            
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; text-align: center;">
+                <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Collaboration Score</div>
+                <div style="font-size: 3rem; font-weight: bold;">${data.collaborationScore || 0}</div>
+                <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.5rem;">Based on shared projects, skills & connections</div>
+            </div>
+            
+            <div class="overlap-grid">
+                <div class="overlap-card">
+                    <div class="overlap-title">🚀 Shared Projects (${data.sharedProjects?.length || 0})</div>
+                    ${data.sharedProjects && data.sharedProjects.length ? 
+                        '<div style="max-height:200px; overflow-y:auto">' + data.sharedProjects.map(proj => `
+                            <div style="padding: 0.75rem; margin-bottom: 0.5rem; background: rgba(0,212,255,0.05); border-radius: 8px; border-left: 3px solid var(--accent);">
+                                <div style="font-weight: 600; color: var(--accent);">${proj.name}</div>
+                                <div style="font-size: 0.8rem; color: #888; margin-top: 0.25rem;">
+                                    <span style="text-transform: capitalize;">${proj.type}</span> • 
+                                    <span style="text-transform: capitalize;">${proj.scale} Scale</span>
+                                </div>
+                            </div>
+                        `).join('') + '</div>'
+                        : '<span style="color:#666">No shared projects</span>'
+                    }
+                </div>
+            
+                <div class="overlap-card">
+                    <div class="overlap-title">🔗 Shared Connections (${data.sharedConnections.length})</div>
+                    ${data.sharedConnections.length ? 
+                        '<div style="max-height:150px; overflow-y:auto">' + data.sharedConnections.map(c => `<div>${c}</div>`).join('') + '</div>'
+                        : '<span style="color:#666">No shared connections</span>'
+                    }
+                </div>
+                
+                <div class="overlap-card">
+                    <div class="overlap-title">✨ Shared Skills (${data.sharedSkills.length})</div>
+                    ${data.sharedSkills.length ? 
+                         '<div style="display:flex; flex-wrap:wrap; gap:5px">' + data.sharedSkills.map(s => `<span class="skill-tag">${s}</span>`).join('') + '</div>'
+                        : '<span style="color:#666">No shared skills</span>'
+                    }
+                </div>
+                
+                <div class="overlap-card">
+                    <div class="overlap-title">🏢 Shared Work History (${data.sharedCompanies.length})</div>
+                    ${data.sharedCompanies.length ? 
+                         data.sharedCompanies.map(c => `<div>${c}</div>`).join('')
+                        : '<span style="color:#666">No shared companies</span>'
+                    }
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('modal-body').innerHTML = html;
+    }
+    
+    async function showProfile(id) {
+        const modal = document.getElementById('profile-modal');
+        const container = document.getElementById('profile-content');
+        
+        container.innerHTML = '<div style="text-align:center; padding: 4rem;">Loading candidate profile...</div>';
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('open'), 10);
+
+        try {
+            const res = await fetch(`/api/candidate?id=${id}`);
+            const data = await res.json();
+            renderProfile(data);
+        } catch (e) {
+            container.innerHTML = '<p style="color:red">Error loading profile</p>';
+        }
+    }
+
+    function renderProfile(data) {
+        if (data.error) {
+            document.getElementById('profile-content').textContent = data.error;
+            return;
+        }
+
+        const person = data.person;
+        const html = `
+            <div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
+                <div style="width: 100px; height: 100px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: #000; font-weight: bold;">
+                    ${person.name.split(' ').map(n => n[0]).join('')}
+                </div>
+                <div>
+                    <h1 style="margin: 0; font-size: 2rem;">${person.name}</h1>
+                    <div style="color: var(--accent); font-weight: 500; font-size: 1.1rem; margin-top: 5px;">${data.experiences[0]?.role || 'Professional'}</div>
+                    <div style="color: #888; font-size: 0.9rem; margin-top: 4px;">${person.email} • ${person.working_years} Years Experience</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2.5rem;">
+                <div>
+                    <section class="profile-section">
+                        <h3>📋 Work History <span style="font-weight:normal; color:#888; font-size:0.85rem;">(${data.experiences.length} positions)</span></h3>
+                        <div style="max-height: 220px; overflow-y: auto;">
+                            ${data.experiences.slice(0, 4).map(exp => `
+                                <div class="exp-item">
+                                    <div class="exp-role">${exp.role} @ ${exp.company}</div>
+                                    <div class="exp-meta">${exp.start_date.split('-')[0]} - ${exp.end_date ? exp.end_date.split('-')[0] : 'Present'}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </section>
+
+                    <section class="profile-section">
+                        <h3>🚀 Projects <span style="font-weight:normal; color:#888; font-size:0.85rem;">(${data.projects.length})</span></h3>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; max-height: 120px; overflow-y: auto;">
+                            ${data.projects.map(p => `
+                                <div class="skill-tag" style="cursor:pointer; padding: 6px 10px;" onclick="showProject('${p.id}')">
+                                    ${p.name}
+                                </div>
+                            `).join('') || '<p style="color:#666">No projects</p>'}
+                        </div>
+                    </section>
+                </div>
+
+                <div>
+                    <section class="profile-section">
+                        <h3>✨ Skills <span style="font-weight:normal; color:#888; font-size:0.85rem;">(${data.skills.length})</span></h3>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 100px; overflow-y: auto;">
+                            ${data.skills.slice(0, 12).map(s => `<span class="skill-tag">${s.name}</span>`).join('')}
+                            ${data.skills.length > 12 ? '<span style="color:#888; font-size:0.8rem; padding: 4px;">+' + (data.skills.length - 12) + ' more</span>' : ''}
+                        </div>
+                    </section>
+
+                    <section class="profile-section">
+                        <h3>🔗 Connections <span style="font-weight:normal; color:#888; font-size:0.85rem;">(${data.connections.length})</span></h3>
+                        <div style="max-height: 150px; overflow-y: auto;">
+                            ${data.connections.slice(0, 15).map(c => `
+                                <div class="clickable-name" style="font-size: 0.85rem; padding: 4px 0;" onclick="showProfile('${c.id}')">
+                                    ${c.name}
+                                </div>
+                            `).join('') || '<p style="color:#666">No connections</p>'}
+                            ${data.connections.length > 15 ? '<div style="color:#888; font-size:0.8rem; padding: 4px;">+' + (data.connections.length - 15) + ' more connections</div>' : ''}
+                        </div>
+                    </section>
+                </div>
+            </div>
+        `;
+        document.getElementById('profile-content').innerHTML = html;
+    }
+
+    function closeProfileModal() {
+        const modal = document.getElementById('profile-modal');
+        modal.classList.remove('open');
+        setTimeout(() => modal.style.display = 'none', 300);
+    }
+
+    async function showProject(id) {
+        const modal = document.getElementById('project-modal');
+        const container = document.getElementById('project-content');
+        
+        container.innerHTML = '<div style="text-align:center; padding: 4rem;">Loading project details...</div>';
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('open'), 10);
+
+        try {
+            const res = await fetch(`/api/project?id=${id}`);
+            const data = await res.json();
+            renderProject(data);
+        } catch (e) {
+            container.innerHTML = '<p style="color:red">Error loading project</p>';
+        }
+    }
+
+    function renderProject(data) {
+        if (data.error) {
+            document.getElementById('project-content').textContent = data.error;
+            return;
+        }
+
+        const proj = data.project;
+        const scaleColors = { small: '#00c853', medium: '#ffab00', large: '#ff5555' };
+        
+        const html = `
+            <div class="project-header">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <h1 style="margin: 0; font-size: 1.8rem;">${proj.name}</h1>
+                        <div style="margin-top: 0.75rem;">
+                            <span class="project-type-badge">${proj.type}</span>
+                            <span style="margin-left: 10px; padding: 4px 12px; background: ${scaleColors[proj.scale] || '#888'}; color: #000; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">${proj.scale.toUpperCase()}</span>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 2.5rem; font-weight: bold; color: var(--accent);">${data.team.length}</div>
+                        <div style="font-size: 0.85rem; color: #888;">Team Members</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-bottom: 1rem;">👥 Project Team</h3>
+            <div style="max-height: 400px; overflow-y: auto;">
+                ${data.team.map(m => `
+                    <div class="team-member">
+                        <div class="team-avatar">${m.name.split(' ').map(n => n[0]).join('')}</div>
+                        <div class="team-info">
+                            <div class="team-name" onclick="showProfile('${m.id}')">${m.name}</div>
+                            <div class="team-role">${m.projectRole}</div>
+                            <div class="team-meta">${m.contribution} • Joined ${m.joinedDate}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        document.getElementById('project-content').innerHTML = html;
+    }
+
+    function closeProjectModal() {
+        const modal = document.getElementById('project-modal');
+        modal.classList.remove('open');
+        setTimeout(() => modal.style.display = 'none', 300);
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('compare-modal');
+        modal.classList.remove('open');
+        setTimeout(() => modal.style.display = 'none', 300);
+    }
+
+    function updateCharts(data) {
+        const ctxSkills = document.getElementById('skillsChart').getContext('2d');
+        if (skillsChart) skillsChart.destroy();
+        skillsChart = new Chart(ctxSkills, {
+            type: 'bar',
+            data: {
+                labels: data.skillDistribution.map(d => d.skill),
+                datasets: [{
+                    label: 'Skills',
+                    data: data.skillDistribution.map(d => d.count),
+                    backgroundColor: '#00d4ff'
+                }]
+            },
+            options: { 
+                indexAxis: 'y', 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { display: false }, 
+                    title: { display:true, text: 'Top Skills in Selection', color: '#a0a0b0' } 
+                },
+                scales: {
+                    x: { ticks: { color: '#a0a0b0' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    y: { ticks: { color: '#a0a0b0' }, grid: { display: false } }
+                }
+            }
+        });
+
+        const ctxYears = document.getElementById('yearsChart').getContext('2d');
+        if (yearsChart) yearsChart.destroy();
+        yearsChart = new Chart(ctxYears, {
+            type: 'doughnut',
+            data: {
+                labels: data.yearsDistribution.map(d => d.range),
+                datasets: [{
+                    data: data.yearsDistribution.map(d => d.count),
+                    backgroundColor: ['#00d4ff', '#7b2cbf', '#00c853', '#ffab00', '#ff5555'],
+                    borderWidth: 0
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { position: 'right', labels: { color: '#a0a0b0', boxWidth: 12 } }, 
+                    title: { display:true, text: 'Experience Range', color: '#a0a0b0' } 
+                } 
+            }
+        });
+    }
+
+    init();
+  </script>
+</body>
+</html>

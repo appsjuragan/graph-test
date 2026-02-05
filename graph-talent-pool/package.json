@@ -1,0 +1,19 @@
+{
+  "name": "talent-pool-graph",
+  "version": "1.0.0",
+  "description": "Talent Pool Graph Database with Neo4j",
+  "main": "src/index.js",
+  "scripts": {
+    "generate": "node scripts/generate_data.js",
+    "seed": "node scripts/seed_database.js",
+    "start": "node src/index.js",
+    "query": "node src/queries/sample_queries.js"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^8.3.1",
+    "neo4j-driver": "^5.16.0"
+  },
+  "keywords": ["neo4j", "graph-database", "talent-pool"],
+  "author": "",
+  "license": "MIT"
+}
