@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraud Analytics Dashboard</title>
+    <meta name="description" content="Real-time fraud detection and analytics dashboard for monitoring suspicious registration patterns">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">🛡️</span>
+                    <span class="logo-text">FraudGuard</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-view="alerts">
+                    <span class="nav-icon">🚨</span>
+                    <span>Fraud Alerts</span>
+                    <span class="nav-badge" id="alertBadge">0</span>
+                </a>
+                <a href="#" class="nav-item" data-view="users">
+                    <span class="nav-icon">👥</span>
+                    <span>Users</span>
+                </a>
+                <a href="#" class="nav-item" data-view="ktp-check">
+                    <span class="nav-icon">🔍</span>
+                    <span>KTP Lookup</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="neo4j-status" id="dbStatus">
+                    <span class="status-dot"></span>
+                    <span>Connecting...</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard View -->
+            <section class="view active" id="dashboardView">
+                <header class="view-header">
+                    <h1>Dashboard Overview</h1>
+                    <p class="subtitle">Real-time fraud detection analytics</p>
+                </header>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon users">👥</div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="statPersons">-</span>
+                            <span class="stat-label">Total Users</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon registrations">📝</div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="statRegistrations">-</span>
+                            <span class="stat-label">Registrations</span>
+                        </div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-icon alerts">⚠️</div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="statFraudPatterns">-</span>
+                            <span class="stat-label">Fraud Patterns</span>
+                        </div>
+                    </div>
+                    <div class="stat-card danger">
+                        <div class="stat-icon critical">🔴</div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="statHighRisk">-</span>
+                            <span class="stat-label">High Risk</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="charts-row">
+                    <div class="chart-card">
+                        <h3>Fraud Pattern Distribution</h3>
+                        <div class="chart-container" id="fraudChart"></div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Recent High-Risk Alerts</h3>
+                        <div class="alerts-list" id="recentAlerts">
+                            <div class="loading">Loading alerts...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Alerts View -->
+            <section class="view" id="alertsView">
+                <header class="view-header">
+                    <h1>Fraud Alerts</h1>
+                    <p class="subtitle">All detected fraud patterns</p>
+                </header>
+
+                <div class="filters-bar">
+                    <select id="severityFilter" class="filter-select">
+                        <option value="">All Severities</option>
+                        <option value="HIGH">High</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="LOW">Low</option>
+                    </select>
+                    <select id="typeFilter" class="filter-select">
+                        <option value="">All Types</option>
+                        <option value="SHARED_KTP">Shared KTP</option>
+                        <option value="EMAIL_CLUSTER">Email Cluster</option>
+                        <option value="AGENT_MIDDLEMAN">Agent/Middleman</option>
+                        <option value="POLICY_VIOLATION">Policy Violation</option>
+                    </select>
+                </div>
+
+                <div class="alerts-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Severity</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Affected Users</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alertsTableBody">
+                            <tr><td colspan="5" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Users View -->
+            <section class="view" id="usersView">
+                <header class="view-header">
+                    <h1>User Management</h1>
+                    <p class="subtitle">Browse and search registered users</p>
+                </header>
+
+                <div class="search-bar">
+                    <input type="text" id="userSearch" placeholder="Search by name or KTP number..." class="search-input">
+                    <button class="btn-primary" id="searchBtn">Search</button>
+                </div>
+
+                <div class="users-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>KTP Number</th>
+                                <th>Gender</th>
+                                <th>Emails</th>
+                                <th>Registrations</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr><td colspan="7" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- KTP Check View -->
+            <section class="view" id="ktpCheckView">
+                <header class="view-header">
+                    <h1>KTP Lookup</h1>
+                    <p class="subtitle">Analyze KTP number for fraud patterns</p>
+                </header>
+
+                <div class="ktp-search-container">
+                    <div class="ktp-search-box">
+                        <input type="text" id="ktpInput" placeholder="Enter 16-digit KTP number..." maxlength="16" class="ktp-input">
+                        <button class="btn-primary btn-lg" id="ktpSearchBtn">Analyze</button>
+                    </div>
+                </div>
+
+                <div class="ktp-results" id="ktpResults">
+                    <div class="ktp-placeholder">
+                        <span class="placeholder-icon">🔍</span>
+                        <p>Enter a KTP number to analyze</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- User Detail Modal -->
+            <div class="modal" id="userModal">
+                <div class="modal-overlay"></div>
+                <div class="modal-content">
+                    <button class="modal-close" id="closeModal">&times;</button>
+                    <div class="modal-body" id="userModalBody">
+                        Loading...
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
