@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fraud Analytics Dashboard</title>
-    <meta name="description" content="Real-time fraud detection and analytics dashboard for monitoring suspicious registration patterns">
+    <meta name="description"
+        content="Real-time fraud detection and analytics dashboard for monitoring suspicious registration patterns">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div class="app">
         <!-- Sidebar -->
@@ -53,6 +56,12 @@
             <section class="view active" id="dashboardView">
                 <header class="view-header">
                     <h1>Dashboard Overview</h1>
+                    <div class="disclaimer-banner"
+                        style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #60a5fa; padding: 10px 16px; border-radius: 8px; margin-bottom: 24px; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                        <span>ℹ️</span>
+                        <span><strong>Data Disclaimer:</strong> All data shown in this dashboard is synthetic and
+                            generated for testing purposes only.</span>
+                    </div>
                     <p class="subtitle">Real-time fraud detection analytics</p>
                 </header>
 
@@ -94,6 +103,16 @@
                         <h3>Fraud Pattern Distribution</h3>
                         <div class="chart-container" id="fraudChart"></div>
                     </div>
+                    <div class="chart-card">
+                        <h3>Risk Distribution</h3>
+                        <div class="chart-container" id="riskPieChart"
+                            style="position: relative; display: flex; justify-content: center; align-items: center;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Alerts Row -->
+                <div class="recent-alerts-section" style="margin-top: 24px;">
                     <div class="chart-card">
                         <h3>Recent High-Risk Alerts</h3>
                         <div class="alerts-list" id="recentAlerts">
@@ -138,7 +157,9 @@
                             </tr>
                         </thead>
                         <tbody id="alertsTableBody">
-                            <tr><td colspan="5" class="loading">Loading...</td></tr>
+                            <tr>
+                                <td colspan="5" class="loading">Loading...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -152,7 +173,8 @@
                 </header>
 
                 <div class="search-bar">
-                    <input type="text" id="userSearch" placeholder="Search by name or KTP number..." class="search-input">
+                    <input type="text" id="userSearch" placeholder="Search by name or KTP number..."
+                        class="search-input">
                     <button class="btn-primary" id="searchBtn">Search</button>
                 </div>
 
@@ -170,7 +192,9 @@
                             </tr>
                         </thead>
                         <tbody id="usersTableBody">
-                            <tr><td colspan="7" class="loading">Loading...</td></tr>
+                            <tr>
+                                <td colspan="7" class="loading">Loading...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -185,7 +209,8 @@
 
                 <div class="ktp-search-container">
                     <div class="ktp-search-box">
-                        <input type="text" id="ktpInput" placeholder="Enter 16-digit KTP number..." maxlength="16" class="ktp-input">
+                        <input type="text" id="ktpInput" placeholder="Enter 16-digit KTP number..." maxlength="16"
+                            class="ktp-input">
                         <button class="btn-primary btn-lg" id="ktpSearchBtn">Analyze</button>
                     </div>
                 </div>
@@ -213,4 +238,5 @@
 
     <script src="app.js"></script>
 </body>
+
 </html>

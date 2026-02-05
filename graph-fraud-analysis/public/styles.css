@@ -8,34 +8,34 @@
     --bg-tertiary: #16213e;
     --bg-card: #1e1e32;
     --bg-hover: #2a2a4a;
-    
+
     --text-primary: #ffffff;
     --text-secondary: #a0a0b8;
     --text-muted: #6c6c8a;
-    
+
     --accent-primary: #6366f1;
     --accent-secondary: #8b5cf6;
     --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    
+
     --success: #10b981;
     --warning: #f59e0b;
     --danger: #ef4444;
     --info: #3b82f6;
-    
+
     --border-color: #2d2d4a;
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-    
+
     /* Spacing */
     --sidebar-width: 260px;
     --header-height: 80px;
-    
+
     /* Transitions */
     --transition-fast: 150ms ease;
     --transition-normal: 250ms ease;
     --transition-slow: 350ms ease;
-    
+
     /* Border Radius */
     --radius-sm: 6px;
     --radius-md: 10px;
@@ -186,8 +186,15 @@ body {
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
 }
 
 /* ============================================
@@ -198,7 +205,7 @@ body {
     margin-left: var(--sidebar-width);
     padding: 32px;
     min-height: 100vh;
-    background: 
+    background:
         radial-gradient(ellipse at top right, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
         radial-gradient(ellipse at bottom left, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
         var(--bg-primary);
@@ -214,8 +221,15 @@ body {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .view-header {
@@ -389,9 +403,17 @@ body {
     transition: width 0.8s ease;
 }
 
-.chart-bar-fill.high { background: linear-gradient(90deg, #ef4444, #f87171); }
-.chart-bar-fill.medium { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-.chart-bar-fill.low { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.chart-bar-fill.high {
+    background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.chart-bar-fill.medium {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.chart-bar-fill.low {
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
 
 .chart-bar-value {
     font-size: 14px;
@@ -447,8 +469,13 @@ body {
     margin-bottom: 4px;
 }
 
-.alert-item.medium .alert-type { color: var(--warning); }
-.alert-item.low .alert-type { color: var(--info); }
+.alert-item.medium .alert-type {
+    color: var(--warning);
+}
+
+.alert-item.low .alert-type {
+    color: var(--info);
+}
 
 .alert-desc {
     font-size: 13px;
@@ -838,14 +865,22 @@ body {
     width: 90%;
     max-width: 800px;
     max-height: 85vh;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
     box-shadow: var(--shadow-lg);
     animation: slideUp var(--transition-normal);
 }
 
 @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .modal-close {
@@ -867,6 +902,8 @@ body {
 
 .modal-body {
     padding: 32px;
+    overflow-y: auto;
+    flex: 1;
 }
 
 .user-detail-header {
@@ -966,7 +1003,7 @@ body {
     .charts-row {
         grid-template-columns: 1fr;
     }
-    
+
     .detail-grid {
         grid-template-columns: 1fr;
     }
@@ -977,24 +1014,24 @@ body {
         transform: translateX(-100%);
         transition: transform var(--transition-normal);
     }
-    
+
     .sidebar.open {
         transform: translateX(0);
     }
-    
+
     .main-content {
         margin-left: 0;
         padding: 20px;
     }
-    
+
     .stats-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .ktp-search-box {
         flex-direction: column;
     }
-    
+
     .ktp-input {
         width: 100%;
     }

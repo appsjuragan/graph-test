@@ -45,6 +45,9 @@ async function loadStats() {
         // Update connection status
         const dbStatus = document.getElementById('dbStatus');
         dbStatus.innerHTML = '<span class="status-dot connected"></span><span>Neo4j Connected</span>';
+
+        // Render Pie Chart
+        renderPieChart(stats);
     } else {
         const dbStatus = document.getElementById('dbStatus');
         dbStatus.innerHTML = '<span class="status-dot error"></span><span>Connection Error</span>';
@@ -94,6 +97,68 @@ async function analyzeKTP(ktpNumber) {
 // ============================================
 // Render Functions
 // ============================================
+function renderPieChart(stats) {
+    const container = document.getElementById('riskPieChart');
+    if (!container) return;
+
+    const normal = stats.persons - stats.fraudPatterns; // Approximate
+    const total = stats.persons;
+
+    // Simple SVG Pie Chart
+    const radius = 80;
+    const center = 100;
+
+    // Calculate angles
+    const highRiskPct = stats.highRisk / total;
+    const fraudPct = (stats.fraudPatterns - stats.highRisk) / total;
+    const normalPct = 1 - (highRiskPct + fraudPct);
+
+    let startAngle = 0;
+
+    function makeSlice(percent, color) {
+        const endAngle = startAngle + (percent * 360);
+        const x1 = center + radius * Math.cos(Math.PI * startAngle / 180);
+        const y1 = center + radius * Math.sin(Math.PI * startAngle / 180);
+        const x2 = center + radius * Math.cos(Math.PI * endAngle / 180);
+        const y2 = center + radius * Math.sin(Math.PI * endAngle / 180);
+
+        const largeArc = percent > 0.5 ? 1 : 0;
+
+        const pathData = [
+            `M ${center} ${center}`,
+            `L ${x1} ${y1}`,
+            `A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`,
+            `Z`
+        ].join(' ');
+
+        startAngle = endAngle;
+        return `<path d="${pathData}" fill="${color}" stroke="var(--bg-card)" stroke-width="2" />`;
+    }
+
+    // Reset angle for drawing
+    startAngle = -90;
+
+    const slices = [
+        makeSlice(Math.max(0.01, highRiskPct), '#ef4444'), // Red
+        makeSlice(Math.max(0.01, fraudPct), '#f59e0b'),    // Orange
+        makeSlice(normalPct, '#10b981')      // Green
+    ].join('');
+
+    container.innerHTML = `
+        <svg viewBox="0 0 200 200" width="200" height="200">
+            ${slices}
+            <circle cx="${center}" cy="${center}" r="${radius * 0.6}" fill="var(--bg-card)" />
+            <text x="${center}" y="${center}" text-anchor="middle" dy="5" fill="var(--text-primary)" font-size="24" font-weight="bold">${Math.round((highRiskPct + fraudPct) * 100)}%</text>
+            <text x="${center}" y="${center}" text-anchor="middle" dy="25" fill="var(--text-secondary)" font-size="12">Risk</text>
+        </svg>
+        <div style="position: absolute; right: 0; top: 20px; font-size: 12px;">
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span> High Risk</div>
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span> Med Risk</div>
+            <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span> Normal</div>
+        </div>
+    `;
+}
+
 function renderFraudChart(summary) {
     const container = document.getElementById('fraudChart');
     const maxCount = Math.max(...summary.map(s => s.count));
@@ -136,12 +201,13 @@ function renderRecentAlerts(alerts) {
     };
 
     container.innerHTML = alerts.map(alert => `
-        <div class="alert-item ${alert.severity.toLowerCase()}">
+        <div class="alert-item ${alert.severity.toLowerCase()}" onclick="loadPersonDetail('${alert.persons[0].id}')" style="cursor: pointer;">
             <span class="alert-icon">${icons[alert.type] || '🚨'}</span>
             <div class="alert-content">
                 <div class="alert-type">${alert.type.replace(/_/g, ' ')}</div>
                 <div class="alert-desc">${alert.description}</div>
             </div>
+            <span style="font-size: 18px; color: var(--text-muted);">›</span>
         </div>
     `).join('');
 }

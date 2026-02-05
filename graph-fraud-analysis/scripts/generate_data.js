@@ -5,9 +5,9 @@ const path = require('path');
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
-const TOTAL_REGISTRATIONS = 1000;
-const NORMAL_USERS_RATIO = 0.80;          // 80% normal users
-const FRAUD_PATTERNS_RATIO = 0.20;        // 20% suspicious patterns
+const TOTAL_REGISTRATIONS = 1400; // Increased to accommodate more fraud cases
+const NORMAL_USERS_RATIO = 0.70;          // 70% normal users
+const FRAUD_PATTERNS_RATIO = 0.30;        // 30% suspicious patterns (approx 420 cases)
 
 // Product purchase limits
 const PRODUCT_LIMITS = {
@@ -310,6 +310,8 @@ function generateRegistration(id, person, email, product, registeredAt) {
     };
 }
 
+
+
 // ============================================================================
 // FRAUD PATTERN GENERATORS
 // ============================================================================
@@ -318,27 +320,31 @@ function generateSharedKTPFraud(startId, count) {
     const persons = [];
     const registrations = [];
 
+    let currentId = startId;
     for (let i = 0; i < count; i++) {
         // Create one KTP used by multiple "persons" (different emails)
-        const basePerson = generatePerson(startId + i * 3);
+        const basePerson = generatePerson(currentId++);
         const sharedKTP = basePerson.ktpNumber;
 
         persons.push(basePerson);
 
-        // Create 2-3 additional fake identities using same KTP
-        const fakeCount = randomInt(2, 3);
+        // Create 2-4 additional fake identities using same KTP
+        const fakeCount = randomInt(2, 4);
+        const usedEmails = [basePerson.emails[0]];
+
         for (let j = 0; j < fakeCount; j++) {
-            const fakePerson = generatePerson(startId + i * 3 + j + 1, {
+            const fakePerson = generatePerson(currentId++, {
                 ktpNumber: sharedKTP, // Same KTP!
                 gender: getGenderFromKTP(sharedKTP),
                 birthDate: generateBirthDateFromKTP(sharedKTP)
             });
             persons.push(fakePerson);
+            usedEmails.push(fakePerson.emails[0]);
 
             // Each fake person registers for products
             fakePerson.emails.forEach(email => {
                 registrations.push(generateRegistration(
-                    registrations.length + 1000,
+                    registrations.length + 10000,
                     fakePerson,
                     email,
                     randomFromArray(Object.keys(PRODUCT_LIMITS))
@@ -346,12 +352,13 @@ function generateSharedKTPFraud(startId, count) {
             });
         }
 
+        const emailList = usedEmails.slice(0, 3).join(', ') + (usedEmails.length > 3 ? '...' : '');
         fraudPatterns.push({
             type: 'SHARED_KTP',
             ktpNumber: sharedKTP,
             affectedPersonIds: persons.slice(-fakeCount - 1).map(p => p.id),
             severity: 'HIGH',
-            description: `KTP ${sharedKTP} is used by ${fakeCount + 1} different email accounts`
+            description: `Identity theft suspicion: KTP ${sharedKTP} is linked to ${fakeCount + 1} distinct accounts (${emailList}). Potential syndicate activity.`
         });
     }
 
@@ -365,15 +372,17 @@ function generateEmailClusterFraud(startId, count) {
 
     for (let i = 0; i < count; i++) {
         // One person with many emails registering excessive products
-        const person = generatePerson(startId + i, { emailCount: randomInt(5, 10) });
+        const person = generatePerson(startId + i, { emailCount: randomInt(6, 12) });
         persons.push(person);
 
         // Register many products across all emails
+        let totalReg = 0;
         person.emails.forEach(email => {
             const productCount = randomInt(3, 8);
+            totalReg += productCount;
             for (let j = 0; j < productCount; j++) {
                 registrations.push(generateRegistration(
-                    registrations.length + 2000,
+                    registrations.length + 20000,
                     person,
                     email,
                     randomFromArray(Object.keys(PRODUCT_LIMITS))
@@ -387,7 +396,7 @@ function generateEmailClusterFraud(startId, count) {
             emailCount: person.emails.length,
             registrationCount: registrations.filter(r => r.personId === person.id).length,
             severity: 'MEDIUM',
-            description: `Person ${person.name} has ${person.emails.length} emails with excessive registrations`
+            description: `Unusual volume: ${person.name} is operating ${person.emails.length} email addresses to bypass per-email limits (Total ${totalReg} registrations).`
         });
     }
 
@@ -407,15 +416,15 @@ function generateAgentMiddlemanFraud(startId, count) {
         persons.push(agent);
 
         // Agent registers products for multiple "clients"
-        const clientCount = randomInt(10, 30);
+        const clientCount = randomInt(15, 40);
         for (let j = 0; j < clientCount; j++) {
             registrations.push(generateRegistration(
-                registrations.length + 3000,
+                registrations.length + 30000,
                 agent,
                 agent.emails[0],
                 randomFromArray(['DigitalCertificate', 'DigitalToken']),
                 // Clustered registration times (within hours)
-                new Date(Date.now() - randomInt(0, 7) * 24 * 60 * 60 * 1000 + randomInt(0, 3) * 60 * 60 * 1000).toISOString()
+                new Date(Date.now() - randomInt(0, 3) * 24 * 60 * 60 * 1000 + randomInt(0, 8) * 60 * 60 * 1000).toISOString()
             ));
         }
 
@@ -425,7 +434,7 @@ function generateAgentMiddlemanFraud(startId, count) {
             agentCompany: agent.agentCompany,
             registrationCount: clientCount,
             severity: 'LOW',
-            description: `${agent.name} acts as agent for ${agent.agentCompany}, registering ${clientCount} products`
+            description: `Commercial activity: ${agent.name} (${agent.agentCompany}) registered ${clientCount} products in a short burst. Verify agency contract.`
         });
     }
 
@@ -444,28 +453,28 @@ function generatePolicyViolationFraud(startId, count) {
         const violations = [];
 
         // Violate DigitalCertificate limit (should be 1 per KTP)
-        const certCount = randomInt(2, 5);
+        const certCount = randomInt(2, 6);
         for (let j = 0; j < certCount; j++) {
             registrations.push(generateRegistration(
-                registrations.length + 4000,
+                registrations.length + 40000,
                 person,
                 person.emails[j % person.emails.length],
                 'DigitalCertificate'
             ));
         }
-        violations.push(`DigitalCertificate: ${certCount}/${PRODUCT_LIMITS.DigitalCertificate.perKTP} per KTP`);
+        violations.push(`${certCount} DigitalCertificates (Limit: 1)`);
 
         // Violate DigitalToken limit (should be max 2 per KTP)
-        const tokenCount = randomInt(3, 6);
+        const tokenCount = randomInt(3, 7);
         for (let j = 0; j < tokenCount; j++) {
             registrations.push(generateRegistration(
-                registrations.length + 4000,
+                registrations.length + 40000,
                 person,
                 person.emails[j % person.emails.length],
                 'DigitalToken'
             ));
         }
-        violations.push(`DigitalToken: ${tokenCount}/${PRODUCT_LIMITS.DigitalToken.perKTP} per KTP`);
+        violations.push(`${tokenCount} DigitalTokens (Limit: 2)`);
 
         fraudPatterns.push({
             type: 'POLICY_VIOLATION',
@@ -473,7 +482,7 @@ function generatePolicyViolationFraud(startId, count) {
             ktpNumber: person.ktpNumber,
             violations: violations,
             severity: 'HIGH',
-            description: `${person.name} violated product purchase limits: ${violations.join(', ')}`
+            description: `Hard limit breach: ${person.name} exceeded purchase quotas. Bought: ${violations.join(', ')}.`
         });
     }
 
@@ -515,8 +524,6 @@ function generateAllData() {
     console.log('🚀 Starting fraud analytics data generation...\n');
 
     const normalCount = Math.floor(TOTAL_REGISTRATIONS * NORMAL_USERS_RATIO);
-    const fraudCount = TOTAL_REGISTRATIONS - normalCount;
-    const fraudPerType = Math.floor(fraudCount / 4);
 
     let personId = 1;
     let allPersons = [];
@@ -530,30 +537,37 @@ function generateAllData() {
     allRegistrations = allRegistrations.concat(normal.registrations);
     personId += normalCount;
 
-    // Generate fraud patterns
-    console.log(`🔴 Generating ${fraudPerType} shared KTP fraud patterns...`);
-    const sharedKTP = generateSharedKTPFraud(personId, fraudPerType);
+    // Generate fraud patterns with unequal distribution
+    // High Severity: ~105 each
+    // Medium/Low Severity: Increased by ~80-100 each with variability
+    const sharedKtpCount = 105;
+    const policyViolationCount = 105;
+    const emailClusterCount = 105 + randomInt(60, 90);   // Medium Severity (increased)
+    const agentMiddlemanCount = 105 + randomInt(70, 100); // Low Severity (increased most)
+
+    console.log(`🔴 Generating ${sharedKtpCount} shared KTP fraud patterns (HIGH)...`);
+    const sharedKTP = generateSharedKTPFraud(personId, sharedKtpCount);
     allPersons = allPersons.concat(sharedKTP.persons);
     allRegistrations = allRegistrations.concat(sharedKTP.registrations);
     allFraudPatterns = allFraudPatterns.concat(sharedKTP.fraudPatterns);
     personId += sharedKTP.persons.length;
 
-    console.log(`🟠 Generating ${fraudPerType} email cluster fraud patterns...`);
-    const emailCluster = generateEmailClusterFraud(personId, fraudPerType);
+    console.log(`🟠 Generating ${emailClusterCount} email cluster fraud patterns (MEDIUM)...`);
+    const emailCluster = generateEmailClusterFraud(personId, emailClusterCount);
     allPersons = allPersons.concat(emailCluster.persons);
     allRegistrations = allRegistrations.concat(emailCluster.registrations);
     allFraudPatterns = allFraudPatterns.concat(emailCluster.fraudPatterns);
     personId += emailCluster.persons.length;
 
-    console.log(`🟡 Generating ${fraudPerType} agent/middleman patterns...`);
-    const agent = generateAgentMiddlemanFraud(personId, fraudPerType);
+    console.log(`🟡 Generating ${agentMiddlemanCount} agent/middleman patterns (LOW)...`);
+    const agent = generateAgentMiddlemanFraud(personId, agentMiddlemanCount);
     allPersons = allPersons.concat(agent.persons);
     allRegistrations = allRegistrations.concat(agent.registrations);
     allFraudPatterns = allFraudPatterns.concat(agent.fraudPatterns);
     personId += agent.persons.length;
 
-    console.log(`🔵 Generating ${fraudPerType} policy violation patterns...`);
-    const policyViolation = generatePolicyViolationFraud(personId, fraudPerType);
+    console.log(`🔵 Generating ${policyViolationCount} policy violation patterns (HIGH)...`);
+    const policyViolation = generatePolicyViolationFraud(personId, policyViolationCount);
     allPersons = allPersons.concat(policyViolation.persons);
     allRegistrations = allRegistrations.concat(policyViolation.registrations);
     allFraudPatterns = allFraudPatterns.concat(policyViolation.fraudPatterns);

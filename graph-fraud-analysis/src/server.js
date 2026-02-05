@@ -59,7 +59,7 @@ app.get('/api/fraud-patterns', async (req, res) => {
                     WHEN 'MEDIUM' THEN 2 
                     ELSE 3 
                 END, f.type
-            LIMIT 50
+            LIMIT 2000
         `);
         const patterns = result.records.map(r => ({
             type: r.get('type'),

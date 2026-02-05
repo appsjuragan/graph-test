@@ -58,3 +58,7 @@ Access:
 - **DigitalToken**: max 2 per KTP  
 - **DigitalSign**: up to 10 per email
 - **DigitalJump**: up to 100 per email per KTP
+
+## ⚠️ Data Disclaimer
+
+All data generated and displayed in this dashboard is **strictly synthetic** and created for testing purposes only. No real personal identifiable information (PII) is used. Any resemblance to actual persons, living or dead, is purely coincidental.

@@ -39,8 +39,8 @@ async function seedDatabase() {
         console.log('\n📐 Creating constraints and indexes...');
         const constraints = [
             'CREATE CONSTRAINT person_id IF NOT EXISTS FOR (p:Person) REQUIRE p.id IS UNIQUE',
-            'CREATE CONSTRAINT person_ktp IF NOT EXISTS FOR (p:Person) REQUIRE p.ktpNumber IS UNIQUE',
-            'CREATE CONSTRAINT email_address IF NOT EXISTS FOR (e:Email) REQUIRE e.address IS UNIQUE',
+            // Removed UNIQUE constraint on KTP to allow Shared KTP fraud pattern
+            'CREATE CONSTRAINT email_addr IF NOT EXISTS FOR (e:Email) REQUIRE e.address IS UNIQUE',
             'CREATE CONSTRAINT phone_number IF NOT EXISTS FOR (ph:Phone) REQUIRE ph.number IS UNIQUE',
             'CREATE CONSTRAINT registration_id IF NOT EXISTS FOR (r:Registration) REQUIRE r.id IS UNIQUE',
             'CREATE CONSTRAINT product_type IF NOT EXISTS FOR (pr:Product) REQUIRE pr.productType IS UNIQUE',
