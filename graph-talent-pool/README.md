@@ -1,5 +1,7 @@
 # Talent Pool Dashboard - Modular Architecture
 
+> **⚠️ DISCLAIMER**: All data contained in this repository, including names, profiles, project assignments, and social connections, is **synthetic, fake, or dummy data**. It does not correspond to real individuals, companies, or actual projects. Any resemblance to real persons, living or dead, or actual events is purely coincidental.
+
 ## 📁 Project Structure
 
 ```
